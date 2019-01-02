@@ -8,12 +8,11 @@ heroku logs -a api-cash4sms -t --source app
 
 import os
 import uuid
-import logging
 
-from dbconnector import DB_Cash4SMS
+from dbconnector import DB
 
-from flask import Flask, request, jsonify
-from random import choice, random, randint
+from flask import Flask, request, jsonify, render_template
+from random import randint
 from datetime import datetime, timedelta
 from time import sleep
 
@@ -21,21 +20,26 @@ app = Flask(__name__)
 
 #-----------------------------------------------------------------------
 
-def request_logger(url, request):
+def error(code: int):
 
-    jb = request.get_json()
-    body = f'\nREQUEST {url}\nBODY {jb}\n'
-    message = '-'*80+body+'-'*80
-    logging.info(message)
+    _error = jsonify(
+        code = code,
+        msg = f'Some problem in {request.path}'
+    )
 
-def request_error(code: str):
+    return (_error, code)
 
-    error = {
-        "code": 404,
-        "msg": "Invalid credentials"
-    }
+#-----------------------------------------------------------------------
 
-    return (jsonify(error), 404)
+@app.after_request
+def after_request(response):
+
+    if request.method == 'POST':
+        body = f'\nREQUEST {request.method} {request.path}\nBODY {request.get_json()}\n'
+        message = '-'*80+body+'-'*80
+        print(message)
+
+    return response
 
 #-----------------------------------------------------------------------
 
@@ -43,14 +47,49 @@ url_login = '/login'
 @app.route(url_login, methods=['POST'])
 def request_url_login():
 
-    request_logger(url_login, request)
+    client_id = request.get_json()['username']
+    obj = DB().execute_dic('cash4sms_users', ['*'], str(client_id))
 
-    success = {
-        "access_token": uuid.uuid4().hex
-    }
+    if obj is not None:
+        return jsonify(
+            access_token = uuid.uuid4().hex
+        )
 
     sleep(0.5)
-    return (jsonify(success), 200) if randint(0,10) != 5 else request_error(404)
+    return error(403)
+
+#-----------------------------------------------------------------------
+
+url_signup = '/signup'
+@app.route(url_signup, methods=['POST'])
+def request_url_signup():
+
+    sms_code = request.get_json()['smscode']
+
+    if sms_code == '555555':
+        return jsonify(
+            msg = f'Success in {request.path}'
+        )
+
+    sleep(0.5)
+    return error(404)
+
+#-----------------------------------------------------------------------
+
+url_getcode = '/getcode'
+@app.route(url_getcode, methods=['POST'])
+def request_url_getcode():
+
+    client_id = request.get_json()['username']
+    obj = DB().execute_dic('cash4sms_users', ['*'], str(client_id))
+
+    if obj is not None:
+        return jsonify(
+            access_token = uuid.uuid4().hex
+        )
+
+    sleep(0.5)
+    return error(404)
 
 #-----------------------------------------------------------------------
 
@@ -58,25 +97,35 @@ url_profile = '/profile'
 @app.route(url_profile, methods=['POST'])
 def request_url_profile():
 
-    request_logger(url_profile, request)
     client_id = request.get_json()['client_id']
-    
-    sql = """
-        SELECT first_name, last_name, birth, country, client_id
-        FROM cash4sms_users
-        WHERE client_id LIKE '{}'
-    """.format(client_id)
-    db = DB_Cash4SMS().execute(sql)
+    keys = ['first_name', 'last_name', 'birth', 'country']
+    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
 
-    success = {
-        "first_name": db[0][0] if len(db) > 0 else None,
-        "last_name": db[0][1] if len(db) > 0 else None,
-        "birth": db[0][2] if len(db) > 0 else None,
-        "country": db[0][3] if len(db) > 0 else None
-    }
+    success = jsonify( obj or dict.fromkeys(keys, None) )
 
     sleep(0.5)
-    return (jsonify(success), 200) if randint(0,10) != 5 else request_error(404)
+    return success if randint(0,10) != 5 else error(404)
+
+#-----------------------------------------------------------------------
+
+url_profile_change = '/profile/change'
+@app.route(url_profile_change, methods=['POST'])
+def request_url_profile_change():
+
+    r_json = request.get_json()
+    client_id = r_json.get('client_id')
+    keys = ['first_name', 'last_name', 'birth', 'country']
+    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
+
+    if obj is not None:
+        new_data = [r_json.get(keys[0]), r_json.get(keys[1]), r_json.get(keys[2]), r_json.get(keys[3])]
+        DB().save('cash4sms_users', keys, new_data, str(client_id))
+        return jsonify(
+            msg = f'Success in {request.path}'
+        )
+
+    sleep(0.5)
+    return error(404)
 
 #-----------------------------------------------------------------------
 
@@ -84,25 +133,51 @@ url_validated = '/validated'
 @app.route(url_validated, methods=['POST'])
 def request_url_validated():
 
-    request_logger(url_validated, request)
     client_id = request.get_json()['client_id']
-    
-    sql = """
-        SELECT validated, client_id
-        FROM cash4sms_users
-        WHERE client_id LIKE '{}'
-    """.format(client_id)
-    db = DB_Cash4SMS().execute(sql)
+    keys = ['validated', 'client_id']
+    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
+
+    success = jsonify( obj or dict.fromkeys(keys, None) )
 
     sleep(0.5)
-    if len(db) > 0:
-        success = {
-            "validated": db[0][0],
-            "client_id": db[0][1]
-        }
-        return jsonify(success), 200
-    
-    return request_error(404)
+    return success if randint(0,10) != 5 else error(404)
+
+#-----------------------------------------------------------------------
+
+url_password = '/password'
+@app.route(url_password, methods=['POST'])
+def request_url_password():
+
+    client_id = request.get_json()['client_id']
+    password = request.get_json()['password']
+    keys = ['client_id', 'password']
+    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
+
+    if obj.get('password') == password:
+        return jsonify( 
+            msg = f'Success in {request.path}'
+        )
+
+    sleep(0.5)
+    return error(404)
+
+#-----------------------------------------------------------------------
+
+url_password_recovery = '/password/recovery'
+@app.route(url_password_recovery, methods=['POST'])
+def request_url_password_recovery():
+
+    client_id = request.get_json()['username']
+    keys = ['client_id', 'password']
+    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
+
+    if obj is not None:
+        return jsonify( 
+            msg = f'Success in {request.path}'
+        )
+
+    sleep(0.5)
+    return error(404)
 
 #-----------------------------------------------------------------------
 
@@ -110,30 +185,27 @@ url_validated_getdata = '/validated/getdata'
 @app.route(url_validated_getdata, methods=['POST'])
 def request_url_validated_getdata():
 
-    request_logger(url_validated_getdata, request)
     client_id = request.get_json()['client_id']
     
     array = []
     for _ in range(1, randint(1,10)):
         number = randint(10000000000,99999999999)
         item = {
-            "number": number,
-            "message": f'test from {client_id} to {number}'
+            'number': number,
+            'message': f'test from {client_id} to {number}'
         }
         array.append(item)
 
-    success = array
+    success = jsonify(array)
     
     sleep(0.5)
-    return (jsonify(success), 200) if randint(0,10) != 5 else request_error(404)
+    return success if randint(0,10) != 5 else error(404)
 
 #-----------------------------------------------------------------------
 
 url_stats = '/stats'
 @app.route(url_stats, methods=['POST'])
 def request_url_stats():
-
-    request_logger(url_stats, request)
 
     from_date = datetime.fromtimestamp(int(request.get_json()['from_date']))
     to_date = datetime.fromtimestamp(int(request.get_json()['to_date']))
@@ -151,15 +223,66 @@ def request_url_stats():
         }
         array.append(item)
 
-    success = array
+    success = jsonify(array)
     
     sleep(0.5)
-    return (jsonify(success), 200) if randint(0,10) != 5 else request_error(404)
+    return success if randint(0,10) != 5 else error(404)
 
 #-----------------------------------------------------------------------
 
+url_balance = '/balance'
+@app.route(url_balance, methods=['POST'])
+def request_url_balance():
+
+    client_id = request.get_json()['client_id']
+    keys = ['balance_amount', 'balance_currency', 'total_count']
+    obj = DB().execute_dic('cash4sms_accounts', keys, str(client_id))
+
+    if obj is not None:
+        return jsonify( 
+            balance = {
+                "amount": obj.get(keys[0]),
+                "currency": obj.get(keys[1])
+            },
+            total = {
+                "count": obj.get(keys[2])
+            }
+        )
+
+    sleep(0.5)
+    return error(404)
+
+#-----------------------------------------------------------------------
+
+url_limits = '/limits'
+@app.route(url_limits, methods=['POST'])
+def request_url_limits():
+
+    client_id = request.get_json()['client_id']
+    keys = ['limit_daily', 'limit_monthly', 'limit_enabled']
+    obj = DB().execute_dic('cash4sms_accounts', keys, str(client_id))
+
+    if obj is not None:
+        return jsonify( 
+            daily = obj.get(keys[0]),
+            monthly = obj.get(keys[1]),
+            enabled = obj.get(keys[2])
+        )
+
+    sleep(0.5)
+    return error(404)
+
+#-----------------------------------------------------------------------
+
+# @app.route('/home.html')
+# def home():
+#     return render_template('home.html')
+
+# @app.route('/about.html')
+# def about():
+#     return render_template('about.html')
+
 if __name__ == '__main__':
-    logging.basicConfig(format='%(message)s', level=logging.INFO)
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
 
