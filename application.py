@@ -12,7 +12,7 @@ import uuid
 from dbconnector import DB
 
 from flask import Flask, request, jsonify, render_template
-from random import randint
+from random import randint, choice
 from datetime import datetime, timedelta
 from time import sleep
 
@@ -211,6 +211,10 @@ def request_url_stats():
     to_date = datetime.fromtimestamp(int(request.get_json()['to_date']))
     delta = to_date - from_date
 
+    client_id = request.get_json()['client_id']
+    keys = ['balance_currency']
+    obj = DB().execute_dic('cash4sms_accounts', keys, str(client_id))
+
     array = []
     for i in range(randint(0, int(delta.days*0.7*0.4))):
         date = to_date - timedelta(days=31*i)
@@ -218,14 +222,44 @@ def request_url_stats():
             "date": int(date.timestamp()),
             "count": randint(1,999),
             "tariff": 4,
-            "currency": "EUR",
+            "currency": obj.get(keys[0]) if obj is not None else 'EUR',
             "amount": randint(10,999)
         }
         array.append(item)
 
     success = jsonify(array)
     
-    sleep(0.5)
+    sleep(1)
+    return success if randint(0,10) != 5 else error(404)
+
+url_income = '/income'
+@app.route(url_income, methods=['POST'])
+def request_url_income():
+
+    from_date = datetime.fromtimestamp(int(request.get_json()['from_date']))
+    to_date = datetime.fromtimestamp(int(request.get_json()['to_date']))
+    delta = to_date - from_date
+
+    client_id = request.get_json()['client_id']
+    keys = ['balance_currency']
+    obj = DB().execute_dic('cash4sms_accounts', keys, str(client_id))
+
+    array = []
+    for i in range(randint(0, int(delta.days*0.7*0.4))):
+        date = to_date - timedelta(days=31*i)
+        item = {
+            "date_create": int(date.timestamp()),
+            "date_transfer": int(date.timestamp()),
+            "number": randint(1,9999),
+            "status": choice(["unpaid", "paid", "rejected"]),
+            "currency": obj.get(keys[0]) if obj is not None else 'EUR',
+            "amount": randint(10,999)
+        }
+        array.append(item)
+
+    success = jsonify(array)
+
+    sleep(1)
     return success if randint(0,10) != 5 else error(404)
 
 #-----------------------------------------------------------------------
@@ -274,13 +308,91 @@ def request_url_limits():
 
 #-----------------------------------------------------------------------
 
-# @app.route('/home.html')
-# def home():
-#     return render_template('home.html')
+url_notifications = '/notifications/<option>'
+@app.route(url_notifications, methods=['POST'])
+def request_url_notifications(option):
 
-# @app.route('/about.html')
-# def about():
-#     return render_template('about.html')
+    success = jsonify( 
+        msg = f'Success in {request.path}'
+    )
+    
+    sleep(0.5)
+    return success if randint(0,10) != 5 else error(404)
+
+#-----------------------------------------------------------------------
+
+url_messages = '/messages/getdata'
+@app.route(url_messages, methods=['POST'])
+def request_url_messages():
+
+    client_id = request.get_json()['client_id']
+    daily = request.get_json()['daily']
+
+    array = list()
+    for _ in range(randint(0,20)):
+        item = {
+            "number": randint(int('1' * len(client_id)),int('9' * len(client_id))),
+            "message": f'{client_id} %RAND8%',
+            "daily": randint(1,int(daily))
+        }
+        array.append(item)
+    
+    success = jsonify(array)
+
+    sleep(0.5)
+    return success if randint(0,10) != 5 else error(404)
+
+#-----------------------------------------------------------------------
+
+url_chat = '/chat'
+@app.route(url_chat, methods=['POST'])
+def request_url_chat():
+
+    count = int( request.get_json()['count'] )
+    start = int( request.get_json()['start'] )
+
+    array = list()
+    for i in range(randint(0,count)):
+        date = datetime.now() - timedelta(hours=(i+start))
+        item = {
+            "index": i + int(start),
+            "message": {
+                "from": choice(["user", "support"]),
+                "msg": choice(["except you wont to sleep me", 
+                                "please explain how work you fucking system", 
+                                "i dont understand anything there"]),
+                "timestamp": int(date.timestamp())
+            }
+        }
+        array.append(item)
+    
+    success = jsonify( {"messages": array} )
+    
+    sleep(1)
+    return success if randint(0,10) != 5 else error(404)
+
+#-----------------------------------------------------------------------
+
+url_msg = '/chat/msg'
+@app.route(url_msg, methods=['POST'])
+def request_url_msg():
+
+    success = jsonify( 
+        msg = f'Success in {request.path}'
+    )
+    
+    sleep(0.5)
+    return success if randint(0,10) != 5 else error(404)
+
+#-----------------------------------------------------------------------
+
+@app.route('/users.html')
+def users():
+    return render_template('users.html')
+
+@app.route('/about.html')
+def about():
+    return render_template('about.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
