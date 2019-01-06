@@ -27,7 +27,7 @@ def error(code: int):
         msg = f'Some problem in {request.path}'
     )
 
-    return (_error, 500)
+    return (_error, 401)
 
 #-----------------------------------------------------------------------
 
