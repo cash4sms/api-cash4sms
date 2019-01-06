@@ -27,7 +27,7 @@ def error(code: int):
         msg = f'Some problem in {request.path}'
     )
 
-    return (_error, code)
+    return (_error, 500)
 
 #-----------------------------------------------------------------------
 
@@ -386,6 +386,7 @@ def request_url_msg():
 
 #-----------------------------------------------------------------------
 
+@app.route('/')
 @app.route('/users.html')
 def users():
     return render_template('users.html')
