@@ -157,16 +157,16 @@ def request_url_password():
 
     client_id = request.get_json()['client_id']
     password = request.get_json()['password']
-    keys = ['client_id', 'password']
-    obj = DB().execute_dic('cash4sms_users', keys, where=('client_id', client_id))
+    updated_keys = ['password', 'updated_at']
+    updated_values = [str(password), datetime.now().replace(microsecond=0).isoformat()]
+    DB().save('cash4sms_users', updated_keys, updated_values, where=('client_id', client_id))
 
-    if obj.get('password') == password:
-        return jsonify( 
+    success = jsonify( 
             msg = f'Success in {request.path}'
         )
 
     sleep(0.5)
-    return error(404)
+    return success if randint(0,10) != 5 else error(404)
 
 #-----------------------------------------------------------------------
 
@@ -418,10 +418,6 @@ def user():
     keys = ['client_id', 'password', 'first_name', 'last_name', 'validated', 'sms_code', 'push_token']
     objs = DB().execute_dic('cash4sms_users', keys=keys, order='updated_at')
     return render_template('user.html', objs=objs)
-
-@app.route('/sms.html')
-def sms():
-    return render_template('sms.html')
 
 @app.route('/push.html')
 def push():
