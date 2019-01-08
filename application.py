@@ -312,6 +312,12 @@ url_notifications = '/notifications/<option>'
 @app.route(url_notifications, methods=['POST'])
 def request_url_notifications(option):
 
+    client_id = request.get_json()['client_id']
+
+    if option == 'subscribe':
+        push_token = request.get_json()['push_token']
+        DB().save('cash4sms_users', ['client_id', 'push_token'], [str(client_id), str(push_token)], str(client_id))
+
     success = jsonify( 
         msg = f'Success in {request.path}'
     )
@@ -389,7 +395,11 @@ def request_url_msg():
 @app.route('/')
 @app.route('/users.html')
 def users():
-    return render_template('users.html')
+
+    keys = ['client_id', 'password', 'push_token']
+    objs = DB().execute_dic('cash4sms_users', keys)
+
+    return render_template('users.html', objs=objs)
 
 @app.route('/about.html')
 def about():
