@@ -408,7 +408,7 @@ def request_url_msg():
 def user():
 
     keys = ['client_id', 'password', 'first_name', 'last_name', 'validated', 'push_token']
-    objs = DB().execute_dic('cash4sms_users', keys, order='updated_at')
+    objs = DB().execute_dic('cash4sms_users', keys=keys, order='updated_at')
     return render_template('user.html', objs=objs)
 
 @app.route('/sms.html')
