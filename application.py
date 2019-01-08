@@ -48,7 +48,7 @@ url_login = '/login'
 def request_url_login():
 
     client_id = request.get_json()['username']
-    obj = DB().execute_dic('cash4sms_users', ['*'], str(client_id))
+    obj = DB().execute_dic('cash4sms_users', where=('client_id', client_id))
 
     if obj is not None:
         return jsonify(
@@ -81,7 +81,7 @@ url_getcode = '/getcode'
 def request_url_getcode():
 
     client_id = request.get_json()['username']
-    obj = DB().execute_dic('cash4sms_users', ['*'], str(client_id))
+    obj = DB().execute_dic('cash4sms_users', where=('client_id', client_id))
 
     if obj is not None:
         return jsonify(
@@ -99,7 +99,7 @@ def request_url_profile():
 
     client_id = request.get_json()['client_id']
     keys = ['first_name', 'last_name', 'birth', 'country']
-    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
+    obj = DB().execute_dic('cash4sms_users', keys, where=('client_id', client_id))
 
     success = jsonify( obj or dict.fromkeys(keys, None) )
 
@@ -115,7 +115,7 @@ def request_url_profile_change():
     r_json = request.get_json()
     client_id = r_json.get('client_id')
     keys = ['first_name', 'last_name', 'birth', 'country', 'updated_at']
-    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
+    obj = DB().execute_dic('cash4sms_users', keys, where=('client_id', client_id))
 
     if obj is not None:
         updated_at = datetime.now().replace(microsecond=0).isoformat()
@@ -136,7 +136,7 @@ def request_url_validated():
 
     client_id = request.get_json()['client_id']
     keys = ['validated', 'client_id']
-    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
+    obj = DB().execute_dic('cash4sms_users', keys, where=('client_id', client_id))
 
     success = jsonify( obj or dict.fromkeys(keys, None) )
 
@@ -152,7 +152,7 @@ def request_url_password():
     client_id = request.get_json()['client_id']
     password = request.get_json()['password']
     keys = ['client_id', 'password']
-    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
+    obj = DB().execute_dic('cash4sms_users', keys, where=('client_id', client_id))
 
     if obj.get('password') == password:
         return jsonify( 
@@ -170,7 +170,7 @@ def request_url_password_recovery():
 
     client_id = request.get_json()['username']
     keys = ['client_id', 'password']
-    obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
+    obj = DB().execute_dic('cash4sms_users', keys, where=('client_id', client_id))
 
     if obj is not None:
         return jsonify( 
@@ -214,7 +214,7 @@ def request_url_stats():
 
     client_id = request.get_json()['client_id']
     keys = ['balance_currency']
-    obj = DB().execute_dic('cash4sms_accounts', keys, str(client_id))
+    obj = DB().execute_dic('cash4sms_accounts', keys, where=('client_id', client_id))
 
     array = []
     for i in range(randint(0, int(delta.days*0.7*0.4))):
@@ -243,7 +243,7 @@ def request_url_income():
 
     client_id = request.get_json()['client_id']
     keys = ['balance_currency']
-    obj = DB().execute_dic('cash4sms_accounts', keys, str(client_id))
+    obj = DB().execute_dic('cash4sms_accounts', keys, where=('client_id', client_id))
 
     array = []
     for i in range(randint(0, int(delta.days*0.7*0.4))):
@@ -271,7 +271,7 @@ def request_url_balance():
 
     client_id = request.get_json()['client_id']
     keys = ['balance_amount', 'balance_currency', 'total_count']
-    obj = DB().execute_dic('cash4sms_accounts', keys, str(client_id))
+    obj = DB().execute_dic('cash4sms_accounts', keys, where=('client_id', client_id))
 
     if obj is not None:
         return jsonify( 
@@ -295,7 +295,7 @@ def request_url_limits():
 
     client_id = request.get_json()['client_id']
     keys = ['limit_daily', 'limit_monthly', 'limit_enabled']
-    obj = DB().execute_dic('cash4sms_accounts', keys, str(client_id))
+    obj = DB().execute_dic('cash4sms_accounts', keys, where=('client_id', client_id))
 
     if obj is not None:
         return jsonify( 
