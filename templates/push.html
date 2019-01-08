@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">client_id</th>
+                    <th scope="col">push_id</th>
+                    <th scope="col">push_title</th>
+                    <th scope="col">push_body</th>
+                    <th scope="col">push_status</th>
+                    <th scope="col">updated_at</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for obj in objs %}
+                <tr>
+                    <td>{{obj.client_id}}</td>
+                    <td>{{obj.push_id}}</td>
+                    <td>{{obj.push_title}}</td>
+                    <td>{{obj.push_body}}</td>
+                    <td>{{obj.push_status}}</td>
+                    <td>{{obj.updated_at}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

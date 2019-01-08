@@ -24,16 +24,23 @@ class DB(object):
         self._db_cursor.execute(sql)
         return self._db_cursor.fetchall()
 
-    def execute_dic(self, table:str, keys:list, client_id:str = None):
+    def execute_dic(self, table:str, keys:list = None, client_id:str = None):
         """
         :return: [ { keys[0] : value, ... } ]\n
         :return: { keys[0] : value, ... } if client_id exist
         """
-        select = ', '.join(keys)
-        sql = f'SELECT {select} FROM {table}'
+        
+        sql = ''
+        if keys is None:
+            sql = f'SELECT * FROM {table}'
+        else:
+            select = ', '.join(keys)
+            sql = f'SELECT {select} FROM {table}'
 
         if client_id is not None:
             sql = sql + f' WHERE client_id LIKE \'{client_id}\''
+
+        sql = sql + ' ORDER BY client_id ASC'
 
         array = list()
         self._db_cursor.execute(sql)
@@ -41,11 +48,23 @@ class DB(object):
 
         return array if client_id is None else ( array[0] if len(array)>0 else None )
 
-    def save(self, table:str, keys:list, data:list, client_id:str):
+    def save(self, table:str, key:list, val:list, where:str, like:str):
+
+        if len(key)>1:        
+            select = ', '.join(key)
+            update = ', '.join( map( lambda it: '\'' + it + '\'', val ) )
+            sql = f'UPDATE {table} SET ({select}) = ({update}) WHERE {where} LIKE \'{like}\''
+        else:
+            sql = f'UPDATE {table} SET {key[0]} = {val[0]} WHERE {where} LIKE \'{like}\''
         
-        select = ', '.join(keys)
-        update = ', '.join( map( lambda it: '\'' + it + '\'', data ) )
-        sql = f'UPDATE {table} SET ({select}) = ({update}) WHERE client_id LIKE \'{client_id}\''
+        self._db_cursor.execute(sql)
+        self._db_connect.commit()
+
+    def save_or_create(self, table:str, key:list, val:list, where:str, like:str):
+
+        select = f'{where}, ' + ', '.join(key)
+        update = f'\'{like}\', ' + ', '.join( map( lambda it: '\'' + it + '\'', val ) )
+        sql = f'INSERT INTO {table} ({select}) VALUES ({update}) ON CONFLICT ({where}) DO UPDATE SET ({select}) = ({update})' 
         
         self._db_cursor.execute(sql)
         self._db_connect.commit()

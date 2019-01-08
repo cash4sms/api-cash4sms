@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">client_id</th>
+                    <th scope="col">password</th>
+                    <th scope="col">first_name</th>
+                    <th scope="col">last_name</th>
+                    <th scope="col">validated</th>
+                    <th scope="col">push_token</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for obj in objs %}
+                <tr>
+                    <td>{{obj.client_id}}</td>
+                    <td>{{obj.password}}</td>
+                    <td>{{obj.first_name}}</td>
+                    <td>{{obj.last_name}}</td>
+                    <td>{{obj.validated}}</td>
+                    <td>{{obj.push_token}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

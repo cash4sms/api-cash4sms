@@ -119,7 +119,7 @@ def request_url_profile_change():
 
     if obj is not None:
         new_data = [r_json.get(keys[0]), r_json.get(keys[1]), r_json.get(keys[2]), r_json.get(keys[3])]
-        DB().save('cash4sms_users', keys, new_data, str(client_id))
+        DB().save('cash4sms_users', keys, new_data, 'client_id', str(client_id))
         return jsonify(
             msg = f'Success in {request.path}'
         )
@@ -312,11 +312,20 @@ url_notifications = '/notifications/<option>'
 @app.route(url_notifications, methods=['POST'])
 def request_url_notifications(option):
 
-    client_id = request.get_json()['client_id']
+    rdata = request.get_json()
 
     if option == 'subscribe':
-        push_token = request.get_json()['push_token']
-        DB().save('cash4sms_users', ['client_id', 'push_token'], [str(client_id), str(push_token)], str(client_id))
+        client_id = rdata.get('client_id')
+        push_token = rdata.get('push_token')
+        DB().save('cash4sms_users', ['push_token'], [f'\'{push_token}\''], 'client_id', str(client_id))
+
+    if option == 'status':
+        client_id = rdata.get('client_id')
+        push_id = rdata.get('push_id')
+        push_status = rdata.get('status')
+        update_keys = ['client_id', 'push_status', 'updated_at']
+        update_values = [str(client_id), str(push_status), datetime.now().replace(microsecond=0).isoformat()]
+        DB().save_or_create('cash4sms_pushs', update_keys, update_values, 'push_id', push_id)
 
     success = jsonify( 
         msg = f'Success in {request.path}'
@@ -393,17 +402,22 @@ def request_url_msg():
 #-----------------------------------------------------------------------
 
 @app.route('/')
-@app.route('/users.html')
-def users():
+@app.route('/user.html')
+def user():
 
-    keys = ['client_id', 'password', 'push_token']
+    keys = ['client_id', 'password', 'first_name', 'last_name', 'validated', 'push_token']
     objs = DB().execute_dic('cash4sms_users', keys)
+    return render_template('user.html', objs=objs)
 
-    return render_template('users.html', objs=objs)
+@app.route('/sms.html')
+def sms():
+    return render_template('sms.html')
 
-@app.route('/about.html')
-def about():
-    return render_template('about.html')
+@app.route('/push.html')
+def push():
+
+    objs = DB().execute_dic('cash4sms_pushs')
+    return render_template('push.html', objs=objs)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
