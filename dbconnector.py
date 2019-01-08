@@ -49,23 +49,23 @@ class DB(object):
 
         return array if where is None else ( array[0] if len(array)>0 else None )
 
-    def save(self, table:str, key:list, val:list, where:str, like:str):
+    def save(self, table:str, key:list, val:list, where:(str,str)):
 
         if len(key)>1:        
             select = ', '.join(key)
             update = ', '.join( map( lambda it: '\'' + it + '\'', val ) )
-            sql = f'UPDATE {table} SET ({select}) = ({update}) WHERE {where} LIKE \'{like}\''
+            sql = f'UPDATE {table} SET ({select}) = ({update}) WHERE {where[0]} LIKE \'{where[1]}\''
         else:
-            sql = f'UPDATE {table} SET {key[0]} = {val[0]} WHERE {where} LIKE \'{like}\''
+            sql = f'UPDATE {table} SET {key[0]} = {val[0]} WHERE {where[0]} LIKE \'{where[1]}\''
         
         self._db_cursor.execute(sql)
         self._db_connect.commit()
 
-    def save_or_create(self, table:str, key:list, val:list, where:str, like:str):
+    def save_or_create(self, table:str, key:list, val:list, where:(str,str)):
 
-        select = f'{where}, ' + ', '.join(key)
-        update = f'\'{like}\', ' + ', '.join( map( lambda it: '\'' + it + '\'', val ) )
-        sql = f'INSERT INTO {table} ({select}) VALUES ({update}) ON CONFLICT ({where}) DO UPDATE SET ({select}) = ({update})' 
+        select = f'{where[0]}, ' + ', '.join(key)
+        update = f'\'{where[1]}\', ' + ', '.join( map( lambda it: '\'' + it + '\'', val ) )
+        sql = f'INSERT INTO {table} ({select}) VALUES ({update}) ON CONFLICT ({where[0]}) DO UPDATE SET ({select}) = ({update})' 
         
         self._db_cursor.execute(sql)
         self._db_connect.commit()
