@@ -51,6 +51,7 @@ def request_url_login():
     obj = DB().execute_dic('cash4sms_users', where=('client_id', client_id))
 
     if obj is not None:
+        sleep(0.5)
         return jsonify(
             access_token = uuid.uuid4().hex
         )
@@ -69,6 +70,7 @@ def request_url_signup():
     obj = DB().execute_dic('cash4sms_users', where=('client_id', client_id))
 
     if obj.get('sms_code') == int(sms_code):
+        sleep(0.5)
         return jsonify(
             msg = f'Success in {request.path}'
         )
@@ -90,6 +92,7 @@ def request_url_getcode():
     DB().save('cash4sms_users', update_keys, update_values, where=('client_id', client_id))
 
     if obj is not None:
+        sleep(0.5)
         return jsonify(
             access_token = uuid.uuid4().hex
         )
@@ -127,6 +130,8 @@ def request_url_profile_change():
         updated_at = datetime.now().replace(microsecond=0).isoformat()
         new_data = [r_json.get(keys[0]), r_json.get(keys[1]), r_json.get(keys[2]), r_json.get(keys[3]), updated_at]
         DB().save('cash4sms_users', keys, new_data, where=('client_id', client_id))
+
+        sleep(0.5)
         return jsonify(
             msg = f'Success in {request.path}'
         )
@@ -175,10 +180,14 @@ url_password_recovery = '/password/recovery'
 def request_url_password_recovery():
 
     client_id = request.get_json()['username']
-    keys = ['client_id', 'password']
-    obj = DB().execute_dic('cash4sms_users', keys, where=('client_id', client_id))
+    obj = DB().execute_dic('cash4sms_users', where=('client_id', client_id))
 
     if obj is not None:
+        updated_keys = ['password', 'updated_at']
+        updated_values = ['123456', datetime.now().replace(microsecond=0).isoformat()]
+        DB().save('cash4sms_users', updated_keys, updated_values, where=('client_id', client_id))
+
+        sleep(0.5)
         return jsonify( 
             msg = f'Success in {request.path}'
         )
@@ -238,6 +247,8 @@ def request_url_stats():
     
     sleep(1)
     return success if randint(0,10) != 5 else error(404)
+
+#-----------------------------------------------------------------------
 
 url_income = '/income'
 @app.route(url_income, methods=['POST'])
@@ -304,6 +315,7 @@ def request_url_limits():
     obj = DB().execute_dic('cash4sms_accounts', keys, where=('client_id', client_id))
 
     if obj is not None:
+        sleep(0.5)
         return jsonify( 
             daily = obj.get(keys[0]),
             monthly = obj.get(keys[1]),
@@ -320,17 +332,16 @@ url_notifications = '/notifications/<option>'
 def request_url_notifications(option):
 
     rdata = request.get_json()
+    client_id = rdata.get('client_id')
     updated_at = datetime.now().replace(microsecond=0).isoformat()
 
     if option == 'subscribe':
-        client_id = rdata.get('client_id')
         push_token = rdata.get('push_token')
         update_keys = ['push_token', 'updated_at']
-        update_values = [f'{push_token}', updated_at]
+        update_values = [push_token, updated_at]
         DB().save('cash4sms_users', update_keys, update_values, where=('client_id', client_id))
 
     if option == 'status':
-        client_id = rdata.get('client_id')
         push_id = rdata.get('push_id')
         push_status = rdata.get('status')
         update_keys = ['client_id', 'push_status', 'updated_at']
