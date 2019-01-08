@@ -114,11 +114,12 @@ def request_url_profile_change():
 
     r_json = request.get_json()
     client_id = r_json.get('client_id')
-    keys = ['first_name', 'last_name', 'birth', 'country']
+    keys = ['first_name', 'last_name', 'birth', 'country', 'updated_at']
     obj = DB().execute_dic('cash4sms_users', keys, str(client_id))
 
     if obj is not None:
-        new_data = [r_json.get(keys[0]), r_json.get(keys[1]), r_json.get(keys[2]), r_json.get(keys[3])]
+        updated_at = datetime.now().replace(microsecond=0).isoformat()
+        new_data = [r_json.get(keys[0]), r_json.get(keys[1]), r_json.get(keys[2]), r_json.get(keys[3]), updated_at]
         DB().save('cash4sms_users', keys, new_data, 'client_id', str(client_id))
         return jsonify(
             msg = f'Success in {request.path}'
@@ -317,7 +318,8 @@ def request_url_notifications(option):
     if option == 'subscribe':
         client_id = rdata.get('client_id')
         push_token = rdata.get('push_token')
-        DB().save('cash4sms_users', ['push_token'], [f'\'{push_token}\''], 'client_id', str(client_id))
+        updated_at = datetime.now().replace(microsecond=0).isoformat()
+        DB().save('cash4sms_users', ['push_token', 'updated_at'], [f'{push_token}', updated_at], 'client_id', str(client_id))
 
     if option == 'status':
         client_id = rdata.get('client_id')
@@ -406,7 +408,7 @@ def request_url_msg():
 def user():
 
     keys = ['client_id', 'password', 'first_name', 'last_name', 'validated', 'push_token']
-    objs = DB().execute_dic('cash4sms_users', keys)
+    objs = DB().execute_dic('cash4sms_users', keys, order='updated_at')
     return render_template('user.html', objs=objs)
 
 @app.route('/sms.html')
@@ -416,7 +418,7 @@ def sms():
 @app.route('/push.html')
 def push():
 
-    objs = DB().execute_dic('cash4sms_pushs')
+    objs = DB().execute_dic('cash4sms_pushs', order='updated_at')
     return render_template('push.html', objs=objs)
 
 if __name__ == '__main__':

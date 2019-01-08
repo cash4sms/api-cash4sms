@@ -24,10 +24,10 @@ class DB(object):
         self._db_cursor.execute(sql)
         return self._db_cursor.fetchall()
 
-    def execute_dic(self, table:str, keys:list = None, client_id:str = None):
+    def execute_dic(self, table:str, keys:list = None, where:(str,str) = None, order:str = None):
         """
         :return: [ { keys[0] : value, ... } ]\n
-        :return: { keys[0] : value, ... } if client_id exist
+        :return: { keys[0] : value, ... } if where exist
         """
         
         sql = ''
@@ -37,16 +37,17 @@ class DB(object):
             select = ', '.join(keys)
             sql = f'SELECT {select} FROM {table}'
 
-        if client_id is not None:
-            sql = sql + f' WHERE client_id LIKE \'{client_id}\''
+        if where is not None:
+            sql = sql + f' WHERE {where[0]} LIKE \'{where[1]}\''
 
-        sql = sql + ' ORDER BY client_id ASC'
+        if order is not None:
+            sql = sql + f' ORDER BY {order} DESC'
 
         array = list()
         self._db_cursor.execute(sql)
         array = self._db_cursor.fetchall()
 
-        return array if client_id is None else ( array[0] if len(array)>0 else None )
+        return array if where is None else ( array[0] if len(array)>0 else None )
 
     def save(self, table:str, key:list, val:list, where:str, like:str):
 
