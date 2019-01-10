@@ -8,10 +8,11 @@ heroku logs -a api-cash4sms -t --source app
 
 import os
 import uuid
+import requests
 
 from dbconnector import DB
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect
 from random import randint, choice
 from datetime import datetime, timedelta
 from time import sleep
@@ -328,7 +329,7 @@ def request_url_limits():
 #-----------------------------------------------------------------------
 
 url_notifications = '/notifications/<option>'
-@app.route(url_notifications, methods=['POST'])
+@app.route(url_notifications, methods=['GET','POST'])
 def request_url_notifications(option):
 
     rdata = request.get_json()
@@ -423,18 +424,52 @@ def request_url_msg():
 #-----------------------------------------------------------------------
 
 @app.route('/')
-@app.route('/user.html')
-def user():
+@app.route('/<option>')
+def site(option=None):
+
+    if option == 'send':
+
+        client_id = request.args.get('client_id')
+        push_token = request.args.get('push_token')
+        
+        push_id = str(uuid.uuid4().hex)
+        push_action = choice(['start', 'statistics', 'income', 'support', 'account'])
+        push_title = f'title push -> {push_action}'
+        push_body = f'push body'
+        updated_at = datetime.now().replace(microsecond=0)
+
+        url = 'https://fcm.googleapis.com/fcm/send'
+        head = {
+            'authorization': 'key=AAAA7KpCKUQ:APA91bHpz2GoQGkbOXQAm2YkuP9sqlsqzhnqNqKNM3pRkfKTb5xqo4hRWn4ONZoaD6HIdQTDu-_TAvIh3TVljRYGh5h9TLCd5I4lRgNi1CO2gFS6NCGNC4BtadBy_Vnjv1mN4tFchxCp',
+            'Content-Type': 'application/json; charset=utf-8'
+        }
+        json_data = {
+            "to": str(push_token),
+            "data": {
+                "push_title": push_title,
+                "push_body": push_body,
+                "push_id": push_id,
+                "push_action": push_action,
+                "push_date": str(int(updated_at.timestamp()))
+            }
+        }
+        res = requests.post(url, json=json_data, headers=head)
+        print('https://fcm.googleapis.com/fcm/send ' + str(res.status_code))
+
+        if res.status_code == 200:
+            update_keys = ['client_id', 'push_title', 'push_body', 'push_action', 'push_status', 'updated_at']
+            update_values = [str(client_id), push_title, push_body, push_action, 'send', updated_at.isoformat()]
+            DB().save_or_create('cash4sms_pushs', update_keys, update_values, where=('push_id', push_id))
+
+        return redirect('push.html')
+
+    if option == 'push.html':
+        objs = DB().execute_dic('cash4sms_pushs', order='updated_at')
+        return render_template('push.html', objs=objs)
 
     keys = ['client_id', 'password', 'first_name', 'last_name', 'validated', 'sms_code', 'push_token']
     objs = DB().execute_dic('cash4sms_users', keys=keys, order='updated_at')
     return render_template('user.html', objs=objs)
-
-@app.route('/push.html')
-def push():
-
-    objs = DB().execute_dic('cash4sms_pushs', order='updated_at')
-    return render_template('push.html', objs=objs)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))

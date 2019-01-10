@@ -19,11 +19,17 @@
                 <tr>
                     <td>{{obj.client_id}}</td>
                     <td>{{obj.password}}</td>
-                    <td>{{obj.first_name}}</td>
-                    <td>{{obj.last_name}}</td>
+                    <td>{% if obj.first_name != None %}{{obj.first_name}}{% endif %}</td>
+                    <td>{% if obj.last_name != None %}{{obj.last_name}}{% endif %}</td>
                     <td>{{obj.validated}}</td>
                     <td>{{obj.sms_code}}</td>
-                    <td>{{obj.push_token}}</td>
+                    <td>
+                        {% if obj.push_token != None %}
+                        <a href="/send?push_token={{ obj.push_token }}&client_id={{obj.client_id}}">
+                            <button type="button" class="btn btn-secondary btn-sm">send_push</button>
+                        </a>
+                        {% endif %}
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>
