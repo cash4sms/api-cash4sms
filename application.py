@@ -423,6 +423,30 @@ def request_url_msg():
 
 #-----------------------------------------------------------------------
 
+url_pay = '/<option>'
+@app.route(url_pay, methods=['POST'])
+def request_url_pay(option):
+
+    if option == 'paymethod':
+        success = jsonify( 
+            method = choice(['paypal', 'card'])
+        )
+    
+    if option == 'paypal':
+        success = jsonify( 
+            email = 'pay@pal.com'
+        )
+
+    if option == 'card':
+        success = jsonify( 
+            card = '1234 5678 0099 9900'
+        )
+
+    sleep(0.5)
+    return success if randint(0,10) != 5 else error(404)
+
+#-----------------------------------------------------------------------
+
 @app.route('/')
 @app.route('/<option>')
 def site(option=None):
@@ -441,7 +465,7 @@ def site(option=None):
         push_id = str(uuid.uuid4().hex)
         push_action = choice(['start', 'statistics', 'income', 'support', 'account'])
         push_title = f'title push'
-        push_body = f'push body : {choice(push_body_text)}'
+        push_body = f'body push : {choice(push_body_text)}'
         updated_at = datetime.now().replace(microsecond=0)
 
         url = 'https://fcm.googleapis.com/fcm/send'
