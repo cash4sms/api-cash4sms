@@ -432,10 +432,16 @@ def site(option=None):
         client_id = request.args.get('client_id')
         push_token = request.args.get('push_token')
         
+        push_body_text = [
+            'некоторый короткий текст',
+            'некоторый более длинный текст для проверки',
+            'ну и совсем длинный кусок текста для проверки интерфейса пушака в пару скрочек'
+        ]
+
         push_id = str(uuid.uuid4().hex)
         push_action = choice(['start', 'statistics', 'income', 'support', 'account'])
-        push_title = f'title push -> {push_action}'
-        push_body = f'push body'
+        push_title = f'title push'
+        push_body = f'push body : {choice(push_body_text)}'
         updated_at = datetime.now().replace(microsecond=0)
 
         url = 'https://fcm.googleapis.com/fcm/send'
